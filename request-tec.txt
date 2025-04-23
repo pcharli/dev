@@ -1,0 +1,1 @@
+ fetch(`https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/poteaux-tec/records?where=within_distance(geo_point_2d%2C%20geom%27POINT(${myPosition.coords.longitude}%20${myPosition.coords.latitude})%27%2C%20${this.distance}km)&limit=20&lang=fr`)

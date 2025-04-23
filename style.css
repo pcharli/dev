@@ -1,0 +1,11 @@
+#map { 
+    height: 100dvh;
+}
+.install-btn {
+    background-color: yellow;
+    color: red;
+}
+
+.hidden {
+    display: none;
+}
