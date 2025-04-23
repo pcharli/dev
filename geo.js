@@ -1,5 +1,8 @@
-// récupèrera ma position
-const myPosition = {}
+// récupèrera ma position, pardéfaut : Delta à Bxl
+const myPosition = {
+    latitude: 50.818463,
+    longitude:4.403008
+}
 
 //options pour la géolocalisation de l'user
 const options = {
@@ -28,6 +31,7 @@ const init = () => {
         // si bloqué
         } else {
             console.log('bloqué')
+            initMap()
         }
     })
 }
@@ -43,6 +47,7 @@ const okPosition = (position) => {
 //si error de gelocalisation
 const errorPosition = () => {
     console.log('erreur de position')
+    initMap()
 }
 init()
 
