@@ -31,6 +31,8 @@ const iconEnd = L.icon({
 let  map = null
 //stock du layer pour les markers après click de souris sur la carte
 let stopsLayer = null 
+//stock du layer pour les lignes de bus
+let lineLayer = null 
 
 //initialisation de la carte
 const initMap = () => {
@@ -46,6 +48,7 @@ const initMap = () => {
     }).addTo(map);
     //ajout d'un calque à la carte et stockage du calque dans la vaiable
     stopsLayer = L.layerGroup().addTo(map)
+    lineLayer = L.layerGroup().addTo(map)
     //ajout de la légende
     L.control.scale({imperial: false, updateWhenIdle: true}).addTo(map);
     //options pour le marker positionnant l'utilisateur
@@ -71,6 +74,7 @@ const initMap = () => {
     
         // Supprimer les anciens marqueurs du calque
         stopsLayer.clearLayers();
+       
     
         // création d'un nouveau marqueur à l'endroit cliqué s
         let marker = L.marker([clickedPosition.latitude, clickedPosition.longitude])
@@ -134,15 +138,41 @@ const getBus =  (pot_id, marker,pot_nom_ha) => {
         `
         if(resp.code == "ok" && resp.nbhits > 0) { 
             resp.content.forEach(line => {
-                template += `<p><a href="">${line.route_short_name} - ${line.route_long_name}</a></p>`
+                template += `<p class="marker-link" onclick="affLine('${line.shape_id}');">${line.route_short_name} - ${line.route_long_name}</p>`
             })
         } else {
             template += `<p class="error">Pas de bus</p>`
         }
         marker.bindPopup(template).openPopup()
+        //affLine()
     })
     .catch(err => {
         console.log(err)
         alert('Erreur serveur')
     })
+}
+
+const affLine = (shape_id) => {
+    console.log(shape_id) 
+  
+    lineLayer.clearLayers()
+
+    fetch(`https://cepegra-frontend.xyz/bootcamp/shapes/${shape_id}`)
+    .then(resp => resp.json())
+    .then(resp => {
+        
+        console.log(resp)
+        const dataPositons = resp.content.map(el => [el.shape_pt_lat, el.shape_pt_lon])
+        console.log(dataPositons[0])
+        let marker
+        marker = L.marker(dataPositons[0], {icon:iconStart}).bindPopup('Départ')
+        lineLayer.addLayer(marker)
+        marker = L.marker(dataPositons[dataPositons.length-1], {icon:iconEnd}).bindPopup('Arrivée')
+        lineLayer.addLayer(marker)
+        let polyline = L.polyline(dataPositons, {color: 'red', weight: 13})
+        lineLayer.addLayer(polyline)
+        
+    })
+    .catch(err => console.log(err))
+   
 }
