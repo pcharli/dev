@@ -27,6 +27,9 @@ const iconEnd = L.icon({
     popupAnchor: [10,-37]
 })
 
+const colors = ['red', 'green', 'blue', 'black', 'silver', 'yellow','pink']
+
+
 //stock de la carte
 let  map = null
 //stock du layer pour les markers après click de souris sur la carte
@@ -34,6 +37,17 @@ let stopsLayer = null
 //stock du layer pour les lignes de bus
 let lineLayer = null 
 
+let conserveLine = false
+
+document.querySelector('.conserve-line').addEventListener('change', e => {
+    //console.log(e.target.checked)
+    conserveLine = e.target.checked
+    if(!conserveLine){
+        lineLayer.clearLayers()
+        stopsLayer.clearLayers()
+    }
+   
+})
 //initialisation de la carte
 const initMap = () => {
     //console.log('initMap', myPosition)
@@ -97,7 +111,7 @@ const affStops = (map,position, start = false) => {
    fetch(`https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/poteaux-tec/records?where=within_distance(geo_point_2d%2C%20geom%27POINT(${position.longitude}%20${position.latitude})%27%2C%20${distance}km)&limit=20&lang=fr`)
    .then(resp => resp.json()) //traitement du json
    .then(resp => {
-        console.log(resp) 
+        //console.log(resp) 
         //si pas de bus    
         if(resp.total_count == 0) {
             alert('Pas de bus autour de vous.')
@@ -132,7 +146,7 @@ const getBus =  (pot_id, marker,pot_nom_ha) => {
      fetch(`https://cepegra-frontend.xyz/bootcamp/stops/${pot_id}`)
     .then(resp => resp.json())
     .then(resp => {
-        console.log(resp)
+        //console.log(resp)
         let template = `
         <p><strong>${pot_nom_ha}</strong></p>
         `
@@ -153,23 +167,32 @@ const getBus =  (pot_id, marker,pot_nom_ha) => {
 }
 
 const affLine = (shape_id) => {
-    console.log(shape_id) 
-  
-    lineLayer.clearLayers()
+    //console.log(shape_id) 
+    //console.log(conserveLine)
+    let colorActive
+    if(!conserveLine) {
+        lineLayer.clearLayers()
+        colorActive = colors[0]
+    } else {
+        const rnd = Math.floor(Math.random() * colors.length)
+        //console.log(rnd)
+        colorActive = colors[rnd]
+    }
+    
 
     fetch(`https://cepegra-frontend.xyz/bootcamp/shapes/${shape_id}`)
     .then(resp => resp.json())
     .then(resp => {
         
-        console.log(resp)
+        //console.log(resp)
         const dataPositons = resp.content.map(el => [el.shape_pt_lat, el.shape_pt_lon])
-        console.log(dataPositons[0])
+        //console.log(dataPositons[0])
         let marker
         marker = L.marker(dataPositons[0], {icon:iconStart}).bindPopup('Départ')
         lineLayer.addLayer(marker)
         marker = L.marker(dataPositons[dataPositons.length-1], {icon:iconEnd}).bindPopup('Arrivée')
         lineLayer.addLayer(marker)
-        let polyline = L.polyline(dataPositons, {color: 'red', weight: 13})
+        let polyline = L.polyline(dataPositons, {color: colorActive, weight: 13})
         lineLayer.addLayer(polyline)
         
     })
