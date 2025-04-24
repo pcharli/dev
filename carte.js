@@ -1,3 +1,4 @@
+//définition des icones
 const iconPosition = L.icon({
     iconUrl: 'icons/icon-map-user-location.svg',
     iconSize: [53, 53],
@@ -26,67 +27,95 @@ const iconEnd = L.icon({
     popupAnchor: [10,-37]
 })
 
+//stock de la carte
+let  map = null
+//stock du layer pour les markers après click de souris sur la carte
+let stopsLayer = null 
+
+//initialisation de la carte
 const initMap = () => {
-    console.log('initMap', myPosition)
-
+    //console.log('initMap', myPosition)
+    // cicle de la div id="map" dans le code HTML
     const $map = document.querySelector('#map')
-
-    const map = L.map('map').setView([myPosition.latitude, myPosition.longitude], 17);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+    //création de la carte ciblée sur la position de l'utilisateur
+    map = L.map('map').setView([myPosition.latitude, myPosition.longitude], 17);
+    //L.tileLayer('http://{s}.tile2.opencyclemap.org/transport/{z}/{x}/{y}.png', { 
+    L.tileLayer('http://tile.openstreetmap.org/{z}/{x}/{y}.png', { //ajoute un fond de carte
         maxZoom: 19,
         attribution: 'Cepegra'
     }).addTo(map);
-
+    //ajout d'un calque à la carte et stockage du calque dans la vaiable
+    stopsLayer = L.layerGroup().addTo(map)
+    //ajout de la légende
     L.control.scale({imperial: false, updateWhenIdle: true}).addTo(map);
-
-    map.on('click', (event) => {
-        let position = {
-            latitude: event.latlng.lat,
-            longitude: event.latlng.lng
-        }
-        L.marker([position.latitude, position.longitude], {title: "click"}).addTo(map)
-        affStops(map,position)
-    })
-
+    //options pour le marker positionnant l'utilisateur
     const optionsMarker = {
         title: "Vous êtes ici",
         icon: iconPosition
       }
-
+      //ajout du marker user sur la carte en utilisant ses optionss
     L.marker([myPosition.latitude, myPosition.longitude], optionsMarker).addTo(map)
     
-    affStops(map, myPosition)
-    //Philippeville
-    let newPosition = {latitude:50.196241, longitude: 4.543508 }
-    affStops(map,newPosition)
-   
+    //appel des arrêts de bus en passant : la carte, la position user et le fait qu'on est au début
+    affStops(map, myPosition, true)
+    
+ 
+    //click sur la carte
+    map.on('click', function(e) {
+        //récup des coordonnées du point cliqué
+        const clickedLatLng = e.latlng;
+        const clickedPosition = {
+            latitude: clickedLatLng.lat,
+            longitude: clickedLatLng.lng
+        };
+    
+        // Supprimer les anciens marqueurs du calque
+        stopsLayer.clearLayers();
+    
+        // création d'un nouveau marqueur à l'endroit cliqué s
+        let marker = L.marker([clickedPosition.latitude, clickedPosition.longitude])
+            .bindPopup("Arrêts proches ici")
+            .openPopup();
+           //ajout ce marker sur le calque
+            stopsLayer.addLayer(marker)
+    
+        // Afficher les arrêts autour du point cliqué
+        affStops(map, clickedPosition)
+    })
 }
-
-const affStops = (map, position) => {
-    console.log('affStops',position)
-    //requête sur l'api des Tec
+//récupère les arrêts via api des tec et les affiche. Paramètre start pour savoir si arrêts affiché sur la map ou sur le layer
+const affStops = (map,position, start = false) => {
+    //console.log('affStops',position)
+    // rayon autour du point ciblé
     const distance = 1
-
+    
+    //requête sur l'api des Tec en passant une position et une distance
    fetch(`https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/poteaux-tec/records?where=within_distance(geo_point_2d%2C%20geom%27POINT(${position.longitude}%20${position.latitude})%27%2C%20${distance}km)&limit=20&lang=fr`)
-   .then(resp => resp.json())
+   .then(resp => resp.json()) //traitement du json
    .then(resp => {
-        console.log(resp)
+        //console.log(resp) 
+        //si pas de bus    
         if(resp.total_count == 0) {
-            alert('Pas de bus autour de vous. Cliquez ailleurs sur la carte')
-        }
-        //boucler les arrêts de bus
+            alert('Pas de bus autour de vous.')
+        }   
+        //si bus, boucler les arrêts de bus
         resp.results.forEach(stop => {
-            //deconstruction de l'objet
+            //deconstruction de l'objet, génère variables lat, lon et pot_nom_ha
            const {lat, lon} = stop.geo_point_2d
            const {pot_nom_ha } = stop
-          
-             L.marker([lat-0.000617, lon+0.0011], {icon:iconStop}).addTo(map).bindPopup(pot_nom_ha)
+            //créer un marker qui utilise ces variables
+             let marker = L.marker([lat-0.000617, lon+0.0011], {icon:iconStop}).bindPopup(pot_nom_ha)
+             //si on n'est pas au début (start = false), on ajoute le marker au layer
+             if (start == false) {
+                stopsLayer.addLayer(marker)
+            } else { //si on est au début, on ajout le marker à la carte
+                marker.addTo(map)
+            }
         })
+
     })
    .catch(err => {
-        console.log(err)
-        alert('Le serveur ne répond pas')
-    })
+       console.log(err)//si la requête ne fonctionne pas
+       alert('Erreur serveur')
+   })
 }
-
-/* philippevile : 50.196241, 4.543508 */

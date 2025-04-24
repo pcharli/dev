@@ -14,15 +14,15 @@ const init = () => {
     //quel est l'état actuelle des droits
     navigator.permissions.query({name:"geolocation"})
     .then(response => {
-        console.log(response.state)
+        //console.log(response.state)
         /* a-t-on déjà les droits ?  */
         if(response.state === 'granted') {
-            console.log('active')
+            //console.log('active')
             // géolocalisation de l'user
             navigator.geolocation.getCurrentPosition(okPosition, errorPosition, options)
             //si pas les droits mais demande autorisée
         } else if(response.state === 'prompt') {
-            console.log('demande')
+            //console.log('demande')
             /* demande des droits et géolocalisation de l'user :
             - si ok => appel de la fonction okPosition
             - si pas ok => appel de la fonction errorPosition
@@ -30,7 +30,7 @@ const init = () => {
             navigator.geolocation.getCurrentPosition(okPosition, errorPosition, options)
         // si bloqué
         } else {
-            console.log('bloqué')
+            //console.log('bloqué')
             initMap()
         }
     })
@@ -46,7 +46,7 @@ const okPosition = (position) => {
 }
 //si error de gelocalisation
 const errorPosition = () => {
-    console.log('erreur de position')
+    //console.log('erreur de position')
     initMap()
 }
 init()
