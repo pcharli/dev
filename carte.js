@@ -93,7 +93,7 @@ const affStops = (map,position, start = false) => {
    fetch(`https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/poteaux-tec/records?where=within_distance(geo_point_2d%2C%20geom%27POINT(${position.longitude}%20${position.latitude})%27%2C%20${distance}km)&limit=20&lang=fr`)
    .then(resp => resp.json()) //traitement du json
    .then(resp => {
-        //console.log(resp) 
+        console.log(resp) 
         //si pas de bus    
         if(resp.total_count == 0) {
             alert('Pas de bus autour de vous.')
@@ -102,9 +102,12 @@ const affStops = (map,position, start = false) => {
         resp.results.forEach(stop => {
             //deconstruction de l'objet, génère variables lat, lon et pot_nom_ha
            const {lat, lon} = stop.geo_point_2d
-           const {pot_nom_ha } = stop
+           const {pot_nom_ha, pot_id } = stop
             //créer un marker qui utilise ces variables
-             let marker = L.marker([lat-0.000617, lon+0.0011], {icon:iconStop}).bindPopup(pot_nom_ha)
+             let marker = L.marker([lat-0.000617, lon+0.0011], {icon:iconStop})
+                .on('click', event => {
+                    getBus(pot_id, marker, pot_nom_ha)
+                })
              //si on n'est pas au début (start = false), on ajoute le marker au layer
              if (start == false) {
                 stopsLayer.addLayer(marker)
@@ -118,4 +121,28 @@ const affStops = (map,position, start = false) => {
        console.log(err)//si la requête ne fonctionne pas
        alert('Erreur serveur')
    })
+}
+
+
+const getBus =  (pot_id, marker,pot_nom_ha) => {
+     fetch(`https://cepegra-frontend.xyz/bootcamp/stops/${pot_id}`)
+    .then(resp => resp.json())
+    .then(resp => {
+        console.log(resp)
+        let template = `
+        <p><strong>${pot_nom_ha}</strong></p>
+        `
+        if(resp.code == "ok" && resp.nbhits > 0) { 
+            resp.content.forEach(line => {
+                template += `<p><a href="">${line.route_short_name} - ${line.route_long_name}</a></p>`
+            })
+        } else {
+            template += `<p class="error">Pas de bus</p>`
+        }
+        marker.bindPopup(template).openPopup()
+    })
+    .catch(err => {
+        console.log(err)
+        alert('Erreur serveur')
+    })
 }
